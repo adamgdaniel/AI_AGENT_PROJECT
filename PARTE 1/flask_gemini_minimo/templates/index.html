@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <p class="eyebrow">Flask + Gemini API</p>
+        <h1>{{ app_title }}</h1>
+        <p class="subtitle">
+          App mínima para hacer una pregunta a Gemini usando una API key.
+          Modelo actual: <strong>{{ model_name }}</strong>
+        </p>
+
+        <form method="post" class="prompt-form">
+          <label for="prompt">Tu pregunta</label>
+          <textarea id="prompt" name="prompt" rows="7" placeholder="Ejemplo: Explícame qué es un agente de IA en 5 líneas para alumnos de Big Data y Cloud.">{{ prompt }}</textarea>
+          <button type="submit">Preguntar</button>
+        </form>
+
+        {% if error %}
+          <div class="message error">
+            <strong>Error:</strong> {{ error }}
+          </div>
+        {% endif %}
+
+        {% if answer %}
+          <section class="response-block">
+            <h2>Respuesta</h2>
+            <div class="response">{{ answer }}</div>
+          </section>
+        {% endif %}
+      </section>
+    </main>
+  </body>
+</html>
