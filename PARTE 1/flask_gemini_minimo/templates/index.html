@@ -7,19 +7,50 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   </head>
   <body>
-    <main class="container">
-      <section class="card">
-        <p class="eyebrow">Flask + Gemini API</p>
-        <h1>{{ app_title }}</h1>
-        <p class="subtitle">
-          App mínima para hacer una pregunta a Gemini usando una API key.
-          Modelo actual: <strong>{{ model_name }}</strong>
-        </p>
+    <main class="page">
+      <section class="card main-card">
+        <div class="two-col">
+          <div>
+            <p class="eyebrow">Flask + Gemini API + Cloud Storage</p>
+            <h1>{{ app_title }}</h1>
+            <p class="subtitle">
+              La app ya puede trabajar en dos modos: respuesta directa con Gemini o respuesta con RAG
+              sobre PDFs guardados en un bucket de Cloud Storage.
+            </p>
+          </div>
+
+          <aside class="status-panel">
+            <h2>Estado RAG</h2>
+            <p><strong>Bucket:</strong> {{ gcs_bucket_name or 'No configurado' }}</p>
+            <p><strong>Prefijo:</strong> {{ gcs_prefix or '(raíz del bucket)' }}</p>
+            <p><strong>Cargado:</strong> {{ 'Sí' if rag_status.loaded else 'No' }}</p>
+            <p><strong>Documentos:</strong> {{ rag_status.num_docs }}</p>
+            <p><strong>Chunks:</strong> {{ rag_status.num_chunks }}</p>
+
+            <form method="post" action="{{ url_for('reload_rag') }}">
+              <button type="submit" class="secondary-btn">Recargar PDFs desde GCS</button>
+            </form>
+
+            {% if rag_status.last_error %}
+              <div class="message error compact">
+                <strong>Error RAG:</strong> {{ rag_status.last_error }}
+              </div>
+            {% endif %}
+          </aside>
+        </div>
 
         <form method="post" class="prompt-form">
           <label for="prompt">Tu pregunta</label>
-          <textarea id="prompt" name="prompt" rows="7" placeholder="Ejemplo: Explícame qué es un agente de IA en 5 líneas para alumnos de Big Data y Cloud.">{{ prompt }}</textarea>
-          <button type="submit">Preguntar</button>
+          <textarea id="prompt" name="prompt" rows="7" placeholder="Ejemplo: ¿Qué empresa reporta mayor beneficio neto y en qué documento aparece?">{{ prompt }}</textarea>
+
+          <label class="checkbox-row">
+            <input type="checkbox" name="use_rag" {% if use_rag %}checked{% endif %}>
+            Usar RAG si hay documentos cargados
+          </label>
+
+          <div class="button-row">
+            <button type="submit">Preguntar</button>
+          </div>
         </form>
 
         {% if error %}
@@ -28,12 +59,54 @@
           </div>
         {% endif %}
 
+        {% if rag_status.docs %}
+          <section class="docs-block">
+            <h2>Documentos indexados</h2>
+            <ul>
+              {% for doc in rag_status.docs %}
+                <li>
+                  <strong>{{ doc.name }}</strong> — {{ doc.pages_with_text }} páginas con texto, {{ doc.chunks }} chunks
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+
         {% if answer %}
           <section class="response-block">
             <h2>Respuesta</h2>
             <div class="response">{{ answer }}</div>
           </section>
         {% endif %}
+
+        {% if sources %}
+          <section class="sources-block">
+            <h2>Fragmentos recuperados</h2>
+            {% for source in sources %}
+              <article class="source-card">
+                <p class="source-title">
+                  <strong>{{ source.doc_name }}</strong>
+                  {% if source.page_start %}
+                    —
+                    {% if source.page_start == source.page_end %}
+                      página {{ source.page_start }}
+                    {% else %}
+                      páginas {{ source.page_start }}-{{ source.page_end }}
+                    {% endif %}
+                  {% endif %}
+                  {% if source.score is not none %}
+                    — similitud {{ '%.3f'|format(source.score) }}
+                  {% endif %}
+                </p>
+                <div class="source-text">{{ source.text }}</div>
+              </article>
+            {% endfor %}
+          </section>
+        {% endif %}
+
+        <footer class="footer-note">
+          Modelo actual: <strong>{{ model_name }}</strong>
+        </footer>
       </section>
     </main>
   </body>
