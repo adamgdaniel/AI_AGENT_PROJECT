@@ -61,22 +61,6 @@ def index():
                     error = "Gemini no ha devuelto texto en esta respuesta."
             except Exception as exc:
                 error = f"Error al llamar a Gemini: {exc}"
-    sesion.append("system: " + answer)
-    return render_template(
-        "index.html",
-        app_title=APP_TITLE,
-        prompt=prompt,
-        answer=answer,
-        error=error,
-        model_name=GEMINI_MODEL,
-    )
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}, 200
-
-
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8080"))
-    app.run(host="0.0.0.0", port=port, debug=True)
+                
+    if answer:                                    
+        sesion.append("system: " + answer)    
